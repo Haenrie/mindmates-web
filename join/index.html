@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>MindMates Einladung</title>
+<meta name="description" content="Einladung zu einem gemeinsamen Rätsel in MindMates">
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1c1c1e;
+    --muted: #5c5c63;
+    --line: #e2e2e6;
+    --accent: #1f6feb;
+    --on-accent: #ffffff;
+    --box: #f4f5f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416;
+      --text: #ececef;
+      --muted: #a2a2aa;
+      --line: #2e2e33;
+      --accent: #5b93f5;
+      --on-accent: #0b0b0c;
+      --box: #1e1f23;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 26rem; margin: 0 auto; padding: 3rem 16px; text-align: center; }
+  h1 { font-size: 1.4rem; line-height: 1.3; margin: 0 0 1.5rem; }
+  .code {
+    font-size: 2.2rem; font-weight: 600; letter-spacing: .25em; padding-left: .25em;
+    background: var(--box); border-radius: 12px; padding-block: .6rem; margin: 0 0 1.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .open {
+    display: block; background: var(--accent); color: var(--on-accent); text-decoration: none;
+    font-weight: 600; border-radius: 12px; padding: .9rem 1rem; margin: 0 0 1.5rem;
+  }
+  p { color: var(--muted); margin: .5rem 0; }
+  .note { border-top: 1px solid var(--line); margin-top: 2rem; padding-top: 1rem; font-size: .95rem; }
+  .missing { color: var(--text); }
+  [hidden] { display: none !important; }
+  footer { margin-top: 2.5rem; font-size: .85rem; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <div id="invite" hidden>
+    <h1 id="title"></h1>
+    <div class="code" id="code" aria-label="Beitrittscode"></div>
+    <a class="open" id="open" href="#"></a>
+    <p class="missing" id="missing" hidden>Die App scheint nicht installiert zu sein.</p>
+    <p>Du kannst den Code auch in der App unter „Beitreten“ eingeben.</p>
+    <p class="note">MindMates ist gerade im geschlossenen Test und noch nicht in den Stores. Wenn du die App noch nicht hast, frag die Person, die dich eingeladen hat.</p>
+  </div>
+
+  <div id="invalid" hidden>
+    <h1>Diese Einladung ist unvollständig</h1>
+    <p>Lass dir den Link oder den Code noch einmal schicken.</p>
+  </div>
+
+  <footer><a href="../">Datenschutz</a></footer>
+</main>
+
+<script>
+  // Invitation link from the app: join/?app=<app>&code=<join code>.
+  // The button opens the game in the installed app via its URL scheme. Later, with an
+  // own domain, the same link becomes an Android App Link / iOS Universal Link.
+  var APPS = {
+    sudoku: { name: 'MindMates Sudoku', scheme: 'mindmates-sudoku', androidPackage: 'com.mindmates.sudoku' },
+    crossword: { name: 'MindMates Kreuzworträtsel', scheme: 'mindmates-crossword', androidPackage: 'com.mindmates.crossword' }
+  };
+  var params = new URLSearchParams(location.search);
+  var app = APPS[params.get('app')];
+  var code = (params.get('code') || '').trim().toUpperCase();
+
+  if (!app || !/^[A-Z0-9]{6}$/.test(code)) {
+    document.getElementById('invalid').hidden = false;
+  } else {
+    document.title = 'Einladung zu ' + app.name;
+    document.getElementById('title').textContent = 'Einladung zu ' + app.name;
+    document.getElementById('code').textContent = code;
+    var open = document.getElementById('open');
+    open.textContent = 'In ' + app.name + ' öffnen';
+
+    if (/Android/i.test(navigator.userAgent)) {
+      // Chrome intent: opens the app if installed, otherwise comes back here with missing=1
+      // instead of showing an error page.
+      var back = new URL(location.href);
+      back.searchParams.set('missing', '1');
+      open.href = 'intent://join/' + code + '#Intent;scheme=' + app.scheme +
+        ';package=' + app.androidPackage +
+        ';S.browser_fallback_url=' + encodeURIComponent(back.href) + ';end';
+    } else {
+      open.href = app.scheme + '://join/' + code;
+    }
+    document.getElementById('missing').hidden = params.get('missing') !== '1';
+    document.getElementById('invite').hidden = false;
+  }
+</script>
+</body>
+</html>
